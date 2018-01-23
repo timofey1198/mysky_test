@@ -1,0 +1,12 @@
+*******Images********
+*.jpg
+*.png
+
+*******Documents*****
+*.pdf
+
+*******Bin-files*****
+*.pyc
+
+
+*.bat
