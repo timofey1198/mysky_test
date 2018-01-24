@@ -1,10 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html>
+  <head>
     <meta charset="UTF-8">
-    <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
+    <title>Easy PDF</title>
+    <link rel="stylesheet" href="{{ static_url("style.css")}}" type="text/css">
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="header border-style"></div>
+      <div class="content border-style">
+        <div class="description">
+          <h3>Share your PDF with <i>Easy PDF</i>!</h3><br>
+          <form action="/login">
+            <input type="text" name="login">
+            <input type="password" name="password">
+            <input type="submit" value="Sign in">
+          </form>
+        </div>
+        {% module linkify(content) %}
+      </div>
+      <div class="footer border-style">
+        &copy; 2018 Starodubtsev Timofey
+      </div>
+    </div>
+  </body>
 </html>
