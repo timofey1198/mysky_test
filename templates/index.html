@@ -4,19 +4,21 @@
     <meta charset="UTF-8">
     <title>Easy PDF</title>
     <link rel="stylesheet" href="{{ static_url("style.css")}}" type="text/css">
+    <link rel="shortcut icon" href="{{ static_url("img/icon.ico")}}" type="image/x-icon">
   </head>
   <body>
     <div class="wrapper">
-      <div class="header border-style"></div>
+      <div class="header border-style">
+          <a href="/"><img src="{{ static_url("img/logo.png")}}" alt="" class="border-style"></a>
+      </div>
       <div class="content border-style">
-        <div class="description">
-          <h3>Share your PDF with <i>Easy PDF</i>!</h3><br>
-          <form action="/login">
-            <input type="text" name="login">
-            <input type="password" name="password">
-            <input type="submit" value="Sign in">
-          </form>
-        </div>
+        {% if module %}
+          {% if module == "files.html" %}
+            {% module Template(module, files=files) %}
+          {% else %}
+            {% module Template(module) %}
+          {% end %}
+        {% end %}
         {% module linkify(content) %}
       </div>
       <div class="footer border-style">

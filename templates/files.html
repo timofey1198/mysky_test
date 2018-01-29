@@ -1,0 +1,30 @@
+<div class="start">
+    Hello, {% module linkify(current_user) %}!
+    <a href="/logout"><button id="login" >Sign Out</button></a>
+</div>
+<div class="files">
+    files...
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        {% module xsrf_form_html() %}
+        <input type="file" name="file" accept="application/pdf">
+        <input type="submit" value="Upload">
+    </form>
+    <table class="file_table">
+        <tr>
+            <td>№</td>
+            <td>File name</td>
+            <td>Owner</td>
+        </tr>
+        {% for file in files %}
+            <tr>
+                <td>{% module linkify(str(file[0])) %}</td>
+                <td>
+                    <a href="/download?file_id={% module linkify(str(file[0])) %}&file_name={% module linkify(str(file[1])) %}">
+                        {% module linkify(file[1]) %}
+                    </a>
+                </td>
+                <td>{% module linkify(file[2]) %}</td>
+            <tr>
+        {% end %}
+    </table>
+</div>
