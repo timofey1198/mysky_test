@@ -2,6 +2,7 @@ from pdfrw import PdfReader, PdfWriter
 from pdf2image import convert_from_path, convert_from_bytes
 import os.path
 
+
 def split(file_path):
     """
 
