@@ -9,6 +9,6 @@
 *.pyc
 *.xml
 *.iml
-
+*.zip
 *.bat
 *.db
