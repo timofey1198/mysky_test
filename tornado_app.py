@@ -21,10 +21,11 @@ import tornado.web
 import tornado.ioloop
 import tornado.httpserver
 import tornado.escape
-
 from tornado.options import define, options, parse_command_line
+
 import os.path
 import sqlite3
+import threading
 
 import pdf
 
@@ -73,7 +74,18 @@ class Application(tornado.web.Application):
         self.db.commit()
 
 
-class BaseHandler(tornado.web.RequestHandler):
+class ThreadableMixin:
+    def start_worker(self, *args, **kwargs):
+        threading.Thread(target=self.worker, args=args, kwargs=kwargs).start()
+
+    def worker(self, *args, **kwargs):
+        try:
+            self._worker(*args, **kwargs)
+        except tornado.web.HTTPError as e:
+            self.set_status(e.status_code)
+
+
+class BaseHandler(tornado.web.RequestHandler, ThreadableMixin):
     @property
     def db(self):
         return self.application.db
@@ -99,6 +111,8 @@ class MainHandler(BaseHandler):
         else:
             cursor = self.db.cursor()
             files = cursor.execute("SELECT * FROM documents").fetchall()
+            files.sort(key=lambda x: -x[0])
+            print(files)
             self.render("index.html", content="Вы вошли!", module="files.html", files=files)
 
 
@@ -140,20 +154,32 @@ class RegistrationHandler(BaseHandler):
 
 
 class DownloadHandler(BaseHandler):
-    def get(self):
+    def _worker(self, *args, **kwargs):
         file_id = self.get_argument("file_id")
         file_name = self.get_argument("file_name")
         print(file_id)
-        self.set_header('Content-Type', 'application/pdf')
-        self.set_header('Content-Disposition', 'attachment; filename=%s' % file_name)
+        self.set_header('Content-Type', 'application/zip')
+        self.set_header('Content-Disposition', 'attachment; filename=%s' % file_name.replace("pdf", "zip"))
         self.flush()
-        with open(os.path.join(os.path.dirname(__file__), "documents/{0}/{0}.pdf".format(file_id)), "rb") as f:
+        with open(os.path.join(os.path.dirname(__file__), "documents/{0}/{0}.zip".format(file_id)), "rb") as f:
             self.finish(f.read())
-        # self.redirect("/")
+
+    @tornado.web.asynchronous
+    @tornado.web.authenticated
+    def get(self):
+        self.start_worker()
 
 
 class UploadHandler(BaseHandler):
+    def _worker(self, *args, **kwargs):
+        pdf.save(kwargs["file_id"], kwargs["file_body"], "documents")
+        self.redirect("/")
+
+    @tornado.web.asynchronous
+    @tornado.web.authenticated
     def post(self):
+        if not self.request.files:
+            self.redirect("/")
         for field_name, files in self.request.files.items():
             for info in files:
                 filename, content_type = info['filename'], info['content_type']
@@ -164,30 +190,16 @@ class UploadHandler(BaseHandler):
                                    (filename, self.get_current_user()))
                     self.db.commit()
                     file_id = cursor.execute("SELECT COUNT(*) FROM documents").fetchall()[0][0]
-                    pdf.save(file_id, info["body"], "documents")
-        self.redirect("/")
+                    self.start_worker(file_id=file_id, file_body=info["body"])
+                else:
+                    self.redirect("/")
 
 
 def main():
     parse_command_line()
     http_server = tornado.httpserver.HTTPServer(Application())
     http_server.listen(options.port)
-    # app = tornado.web.Application(
-    #     [
-    #         (r"/", MainHandler),
-    #         (r"/login", LoginHandler),
-    #         (r"/register", RegistrationHandler),
-    #         (r"/download", DownloadHandler),
-    #         (r"/upload", UploadHandler),
-    #         (r"/logout", LogoutHandler),
-    #     ],
-    #     cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
-    #     template_path=os.path.join(os.path.dirname(__file__), "templates"),
-    #     static_path=os.path.join(os.path.dirname(__file__), "static"),
-    #     xsrf_cookies=True,
-    #     debug=options.debug,
-    # )
-    # app.listen(options.port)
+
     print("OK")
     tornado.ioloop.IOLoop.current().start()
 
