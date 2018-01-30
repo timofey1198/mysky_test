@@ -112,7 +112,6 @@ class MainHandler(BaseHandler):
             cursor = self.db.cursor()
             files = cursor.execute("SELECT * FROM documents").fetchall()
             files.sort(key=lambda x: -x[0])
-            print(files)
             self.render("index.html", content="Вы вошли!", module="files.html", files=files)
 
 
@@ -157,7 +156,6 @@ class DownloadHandler(BaseHandler):
     def _worker(self, *args, **kwargs):
         file_id = self.get_argument("file_id")
         file_name = self.get_argument("file_name")
-        print(file_id)
         self.set_header('Content-Type', 'application/zip')
         self.set_header('Content-Disposition', 'attachment; filename=%s' % file_name.replace("pdf", "zip"))
         self.flush()
@@ -183,7 +181,6 @@ class UploadHandler(BaseHandler):
         for field_name, files in self.request.files.items():
             for info in files:
                 filename, content_type = info['filename'], info['content_type']
-                print(filename, content_type)
                 if content_type == "application/pdf":
                     cursor = self.db.cursor()
                     cursor.execute("INSERT INTO documents VALUES (NULL, ?, ?)",
@@ -199,7 +196,6 @@ def main():
     parse_command_line()
     http_server = tornado.httpserver.HTTPServer(Application())
     http_server.listen(options.port)
-
     print("OK")
     tornado.ioloop.IOLoop.current().start()
 
