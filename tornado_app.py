@@ -154,15 +154,20 @@ class RegistrationHandler(BaseHandler):
 
 
 class DownloadHandler(BaseHandler):
-    def get(self):
+    def _worker(self, *args, **kwargs):
         file_id = self.get_argument("file_id")
         file_name = self.get_argument("file_name")
         print(file_id)
-        self.set_header('Content-Type', 'application/pdf')
-        self.set_header('Content-Disposition', 'attachment; filename=%s' % file_name)
+        self.set_header('Content-Type', 'application/zip')
+        self.set_header('Content-Disposition', 'attachment; filename=%s' % file_name.replace("pdf", "zip"))
         self.flush()
-        with open(os.path.join(os.path.dirname(__file__), "documents/{0}/{0}.pdf".format(file_id)), "rb") as f:
+        with open(os.path.join(os.path.dirname(__file__), "documents/{0}/{0}.zip".format(file_id)), "rb") as f:
             self.finish(f.read())
+
+    @tornado.web.asynchronous
+    @tornado.web.authenticated
+    def get(self):
+        self.start_worker()
 
 
 class UploadHandler(BaseHandler):
@@ -171,6 +176,7 @@ class UploadHandler(BaseHandler):
         self.redirect("/")
 
     @tornado.web.asynchronous
+    @tornado.web.authenticated
     def post(self):
         if not self.request.files:
             self.redirect("/")
